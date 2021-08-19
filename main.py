@@ -22,7 +22,7 @@ def login(device):
     delta = datetime.timedelta(minutes=30)
     token = create_access_token(identity=device, expires_delta=delta)
     return json.dumps({'token': token})
-
+ 
 @app.route('/v1/localabast/get/<string:matriz>', methods=['GET'])
 @jwt_required()
 def localabast(matriz):
