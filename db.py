@@ -77,7 +77,7 @@ class Querys(Connection):
             else:
                 condition = f' {operador} '.join(condicionais)
                 sql = f"select {fields} from {table} where {condition};"
-            
+            print(sql)
             self.execute(sql)
             self.commit()
             

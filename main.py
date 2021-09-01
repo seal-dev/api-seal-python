@@ -28,7 +28,7 @@ def login(device):
 def localabast(matriz):
     test_client = app.test_client()
     resposta = test_client.post()
-    print(resposta.get_json())
+
     fields = ['*']
     
     select = query.select('app_localabastecimento', ', '.join(fields), 'and' , f"empresa_id = {int(matriz)}")
@@ -62,12 +62,13 @@ def tanques(idMatriz):
     lista = []
 
     for i in response:
+        
         retorno = {
             "id_tanquesveiculos": i[0],
             "id_veiculos": i[7],
             "id_produtos1": i[4],
             "id_produtos2": i[5],
-            "cod_xpid": 0,
+            "cod_xpid": '0',
             "tipo": 0,
             "ativo": i[3]
         }
@@ -223,9 +224,8 @@ def filial(idfilial):
             "idcompserie": 0,
             "nrocompatual": 0
         }
-        print('pegou')
+        
         lista.append(retorno)    
-    
     return jsonify(lista)
 
 @app.route('/v1/funcionarios/get/<string:idMatriz>', methods=['GET'])
@@ -234,7 +234,7 @@ def funcionario(idMatriz):
 
     fields = ['*']
 
-    select = query.select('app_funcionario', ', '.join(fields), 'and' , f"id = {idMatriz}")
+    select = query.select('app_funcionario', ', '.join(fields), 'and' , f"empresa_id = {idMatriz}")
                     
     response = query.fecthall()
 
@@ -268,13 +268,52 @@ def funcionario(idMatriz):
 
     return jsonify(lista)
 
+@app.route('/v1/abastecimentos/get/<string:idFilial>', methods=['GET'])
+@jwt_required()
+def get_abastecimentos(idFilial):
+
+    fields = ['*']
+    
+    select = query.select('app_abastecimento', ', '.join(fields), 'and' , f"empresa_filial_id = {int(idFilial)}")
+                    
+    response = query.fecthall()
+
+    lista = []
+
+    for i in response:
+        
+        retorno = {
+            "id": i[0],
+            "idfilial": i[12],
+            "idcomboio": i[1],
+            "idbico": i[11],
+            "data": f"{i[3]}",
+            "qtde": i[4],
+            "idplaca": i[14],
+            "idfuncionario": i[16],
+            "idoperador": i[15],
+            "semtag": i[5],
+            "odometro": float(i[6]),
+            "horimetro": float(i[7]),
+            "tag": f"{i[8]}",
+            "local": i[13],
+            "tipotq": i[17],
+            "tipolib": i[18],
+            "telemetria": i[10]
+        }
+        
+        lista.append(retorno)   
+
+    return jsonify(lista)
+
+
 @app.route('/v1/placas/get/<string:idMatriz>', methods=['GET'])
 @jwt_required()
 def placas(idMatriz):
 
     fields = ['*']
 
-    select = query.select('app_veiculos', ', '.join(fields), 'and', f"empresa_id = {int(idMatriz)}")
+    select = query.select('app_veiculos', ', '.join(fields), 'and', f"empresa_id = {int(idMatriz)} ORDER BY id;")
 
     response = query.fecthall()
     
@@ -282,7 +321,7 @@ def placas(idMatriz):
     
     for i in response:
 
-        select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]}")
+        select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]} ")
 
         response_modelo = query.fecthall()
 
@@ -293,12 +332,12 @@ def placas(idMatriz):
         retorno = {
                 "id_placas": i[0],
                 "nroplaca": i[1],
-                "ultimoodometro": 0,
+                "ultimoodometro": '0',
                 "tag": "string",
                 "veiculo": modelo,
-                "motorista": 0,
+                "motorista": '{}'.format(0),
                 "id_entidade": 0,
-                "horimetro": i[6],
+                "horimetro": '{}'.format(i[6]),
                 "emitecompnf": i[10],
                 "tpliberacao": i[9],
                 "ctrlconsumo": i[11],
@@ -308,7 +347,7 @@ def placas(idMatriz):
                 "codteclado": "string",
                 "ativo": i[12],
                 "pulsoskm": i[13],
-                "nropulsos": i[14],
+                "nropulsos": int(i[14]),
                 "iptmct": "string",
                 "kmbase": i[15],
                 "hrbase": i[16]
@@ -323,7 +362,8 @@ def abastecimento():
 
     body = request.get_json()
     
-    lista_fields = ["id", "idfilial",
+    lista_fields = ["id", 
+                    "idfilial",
                     "idcomboio",
                     "idbico",
                     "data",
@@ -339,10 +379,10 @@ def abastecimento():
                     "tipotq",
                     "tipolib",
                     "telemetria"]
+
     error = False
 
     for i, data in enumerate(lista_fields):
-        print(lista_fields[i])
         if lista_fields[i] not in body:
             error = True
             return {"message": f"está faltando o campo '{lista_fields[i]}', que é um campo obigatório."}
@@ -358,6 +398,7 @@ def abastecimento():
             valores_campos.append(body[i])
 
         nomes_campos_db = []
+
         for i in nomes_campos_dict:
             
             if i == 'idfilial':
