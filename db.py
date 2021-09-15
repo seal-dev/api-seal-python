@@ -77,10 +77,14 @@ class Querys(Connection):
             else:
                 condition = f' {operador} '.join(condicionais)
                 sql = f"select {fields} from {table} where {condition};"
-            print(sql)
+            
             self.execute(sql)
             self.commit()
             
         except Exception as e:
-            print('Erro ao consultar!', e)
-    
+           
+            self.execute('rollback;')
+            self.commit()
+
+            print(e)
+            

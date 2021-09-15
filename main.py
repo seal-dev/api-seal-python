@@ -4,6 +4,7 @@ from db import Querys
 import json
 import jwt
 import datetime
+import psycopg2 as db
 
 app = Flask(__name__)
 
@@ -40,11 +41,49 @@ def localabast(matriz):
     for i in response:
         
         retorno = {
-            'id': i[0],
+            'id_localabastecimento': i[0],
             'descricao': i[1],
             'ativo': i[2]
         }
         
+        lista.append(retorno)    
+   
+    return jsonify(lista)
+
+@app.route('/v1/local/get/<string:matriz>', methods=['GET'])
+@jwt_required()
+def local(matriz):
+    test_client = app.test_client()
+    resposta = test_client.post()
+
+    fields = ['*']
+    
+    select = query.select('app_funcionario', ', '.join(fields), 'and' , f"empresa_id = {int(matriz)}")
+                    
+    response = query.fecthall()
+
+    lista = []
+
+    for i in response:
+
+        id = i[6]
+
+        select = query.select('app_localabastecimento', ', '.join(fields), 'and' , f"id = {id}")
+
+        try:
+            response_local = query.fecthall()
+                                                                                                                                                                                                                                
+            for j in response_local:
+                local_op = j[1]
+        except db.ProgrammingError:
+            local_op = None
+
+        retorno = {
+            'id': id,
+            'id_operadores': i[4],
+            'local': local_op
+        }
+            
         lista.append(retorno)    
 
     return jsonify(lista)
@@ -82,12 +121,12 @@ def tanques(idMatriz):
 def bicos(filial, bico):
     fields = ['*']
 
-    select = query.select('app_bico', ', '.join(fields), 'and', f"empresa_id = {int(filial)}", f"id={int(bico)}")
+    select = query.select('app_bico', ', '.join(fields), 'and', f"empresa_id = {int(filial)}", f"codigo_bico={int(bico)}")
 
     response = query.fecthall()
 
     lista = []
-    print(response)
+    
     for i in response:
 
         id_bico = i[0]
@@ -105,6 +144,7 @@ def bicos(filial, bico):
         local_abast_id = i[12]
         tanque_id = i[13]
         status = i[14]
+        codigo_bico = i[15]
 
         select_tanques = query.select('app_tanques', ', '.join(fields), 'and', f"id = {tanque_id}")
 
@@ -112,7 +152,7 @@ def bicos(filial, bico):
 
         for j in response_tanque:
             id_produto = j[9]
-
+            
             select_produto = query.select('app_produtos', ', '.join(fields), 'and', f"id = {id_produto}")
 
             response_produto = query.fecthall()
@@ -121,7 +161,7 @@ def bicos(filial, bico):
                 descricao_produto = k[2]
 
                 retorno = {
-                    "id_bico": id_bico,
+                    "id_bico": codigo_bico,
                     "id_produto": id_produto,
                     "nomeproduto": descricao_produto,
                     "vlrunit": 0,
@@ -137,17 +177,17 @@ def bicos(filial, bico):
 
     return json.dumps(lista).encode('utf8')
 
-@app.route('/v1/bicos/get/<string:idCcs>', methods=['GET'])
+@app.route('/v1/bicos/get/<string:bicoid>', methods=['GET'])
 @jwt_required()
-def bicos_2(idCcs):
+def bicos_2(bicoid):
     fields = ['*']
 
-    select = query.select('app_bico', ', '.join(fields), 'and', f"ccs_id = {idCcs}")
+    select = query.select('app_bico', ', '.join(fields), 'and', f"id = {bicoid}")
 
     response = query.fecthall()
 
     lista = []
-    print(response)
+    
     for i in response:
 
         id_bico = i[0]
@@ -244,7 +284,8 @@ def funcionario(idMatriz):
         id_funcionario = i[0]
         id_usuario = i[4]
         senha_app = i[2]           
-
+        nivel = i[1]
+        
         select_user = query.select('auth_user', 'first_name, is_active', 'and', f"id = {id_usuario}")
         
         response_user = query.fecthall()
@@ -268,6 +309,67 @@ def funcionario(idMatriz):
 
     return jsonify(lista)
 
+@app.route('/v1/operadores/get/<string:idMatriz>', methods=['GET'])
+@jwt_required()
+def operadores(idMatriz):
+
+    fields = ['*']
+
+    select = query.select('app_funcionario', ', '.join(fields), 'and' , f"empresa_id = {idMatriz}")
+                    
+    response = query.fecthall()
+
+    lista = []
+
+    for i in response:
+        id_funcionario = i[0]
+        id_usuario = i[4]
+        senha_app = i[2]           
+        nivel = i[1]
+        login = i[5]
+
+        retorno = {
+                "id_usuario": id_usuario,
+                "senha": senha_app,
+                "login": login,
+                "tipo": nivel
+            }
+
+        if nivel >= 1:
+            lista.append(retorno)
+
+    return jsonify(lista)
+
+@app.route('/v1/config/get/<string:idMatriz>', methods=['GET'])
+@jwt_required()
+def get_configcomboio(idMatriz):
+    fields = ['*']
+
+    select = query.select('app_config', ', '.join(fields), 'and' , f"empresa_id = {idMatriz}")
+                    
+    response = query.fecthall()
+
+    lista = []
+
+    login = 0
+    senha = 0
+    for i in response:
+        if i[1] is True:
+            login = 1
+        if i[2] is True:
+            senha = 1
+
+        retorno = {
+                'login' : login,
+                'senha' : senha,
+                'preodo' : 1,
+                'bloqkmhr' : 1
+            }
+
+        lista.append(retorno)
+
+    return jsonify(lista)
+
 @app.route('/v1/abastecimentos/get/<string:idFilial>', methods=['GET'])
 @jwt_required()
 def get_abastecimentos(idFilial):
@@ -275,37 +377,44 @@ def get_abastecimentos(idFilial):
     fields = ['*']
     
     select = query.select('app_abastecimento', ', '.join(fields), 'and' , f"empresa_filial_id = {int(idFilial)}")
-                    
-    response = query.fecthall()
+    
+    try:
+        response = query.fecthall()
 
-    lista = []
-
-    for i in response:
+        lista = []
         
-        retorno = {
-            "id": i[0],
-            "idfilial": i[12],
-            "idcomboio": i[1],
-            "idbico": i[11],
-            "data": f"{i[3]}",
-            "qtde": i[4],
-            "idplaca": i[14],
-            "idfuncionario": i[16],
-            "idoperador": i[15],
-            "semtag": i[5],
-            "odometro": float(i[6]),
-            "horimetro": float(i[7]),
-            "tag": f"{i[8]}",
-            "local": i[13],
-            "tipotq": i[17],
-            "tipolib": i[18],
-            "telemetria": i[10]
-        }
+
+        for i in response:
+            
+            retorno = {
+                "id": i[0],
+                "idfilial": i[12],
+                "idcomboio": i[1],
+                "idbico": i[11],
+                "data": f"{i[3]}",
+                "qtde": i[4],
+                "idplaca": i[14],
+                "idfuncionario": i[16],
+                "idoperador": i[15],
+                "semtag": i[5],
+                "odometro": float(i[6]),
+                "horimetro": float(i[7]),
+                "tag": f"{i[8]}",
+                "local": i[13],
+                "tipotq": i[17],
+                "tipolib": i[18],
+                "telemetria": i[10]
+            }
+            
+            lista.append(retorno)   
         
-        lista.append(retorno)   
+       
+        return jsonify(lista), 200
 
-    return jsonify(lista)
+    except Exception as e:
 
+        return str(e)
+   
 
 @app.route('/v1/placas/get/<string:idMatriz>', methods=['GET'])
 @jwt_required()
@@ -319,16 +428,22 @@ def placas(idMatriz):
     
     lista = []
     
+   
     for i in response:
-
+        
         select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]} ")
 
         response_modelo = query.fecthall()
 
         for j in response_modelo:
             modelo = j[1]
+        
+        if i[11] > 0:
+            consumo = 1
+        else:
+            consumo = 0
 
-
+        print(i[14])
         retorno = {
                 "id_placas": i[0],
                 "nroplaca": i[1],
@@ -340,15 +455,15 @@ def placas(idMatriz):
                 "horimetro": '{}'.format(i[6]),
                 "emitecompnf": i[10],
                 "tpliberacao": i[9],
-                "ctrlconsumo": i[11],
+                "ctrlconsumo": consumo,
                 "id_checklist": i[8],
                 "exibemedia": 0,
-                "ctrlhrkm": 0,
-                "codteclado": "string",
+                "ctrlhrkm": i[11],
+                "codteclado": f"{i[2]}",
                 "ativo": i[12],
                 "pulsoskm": i[13],
-                "nropulsos": int(i[14]),
-                "iptmct": "string",
+                "nropulsos": float(i[14]),
+                "iptmct": '{}'.format(i[3]),
                 "kmbase": i[15],
                 "hrbase": i[16]
         }
@@ -359,7 +474,7 @@ def placas(idMatriz):
 @app.route('/v1/abastecimento/salvar', methods=['POST'])
 @jwt_required()
 def abastecimento():
-
+    
     body = request.get_json()
     
     lista_fields = ["id", 
@@ -389,16 +504,11 @@ def abastecimento():
 
     if error is not True:
     
-        nomes_campos_dict = []
-        valores_campos = []
-
-        for i in body:
-
-            nomes_campos_dict.append(i)
-            valores_campos.append(body[i])
+        nomes_campos_dict = body.keys()
+        valores_campos_dict = body.values()
 
         nomes_campos_db = []
-
+        valores_campos = []
         for i in nomes_campos_dict:
             
             if i == 'idfilial':
@@ -435,11 +545,22 @@ def abastecimento():
                 i = 'local_abastecimento_id'
 
             nomes_campos_db.append(i)
+
+        for i in valores_campos_dict:
+            valores_campos.append(i)
         
+        print(tuple(valores_campos))
         insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
         
         return insert
 
+@app.errorhandler(500)
+def internal_error(error):
+    return "500 error"
+
+@app.errorhandler(404)
+def not_found(error):
+    return "404 error", 404
 
 if __name__ == '__main__':
     app.run(host='192.168.1.58', port='7676', debug=True)
