@@ -1,0 +1,11 @@
+  
+server {
+    listen 443 ssl;
+    listen 7676;
+    server_name 45.15.24.171;
+
+location / {
+  include proxy_params;
+  proxy_pass http://unix:/home/lg/api-python/app.sock;
+    }
+}

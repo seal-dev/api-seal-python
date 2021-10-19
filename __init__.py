@@ -5,6 +5,7 @@ import json
 import jwt
 import datetime
 import psycopg2 as db
+import logging
 
 app = Flask(__name__)
 
@@ -116,12 +117,12 @@ def tanques(idMatriz):
     
     return jsonify(lista)
 
-@app.route('/v1/bicos/bicoscomboio/<string:filial>/<string:bico>', methods=['GET'])
+@app.route('/v1/bicos/bicoscomboio/<string:idFilial>/<string:nroBico>', methods=['GET'])
 @jwt_required()
-def bicos(filial, bico):
+def bicos(idFilial, nroBico):
     fields = ['*']
-
-    select = query.select('app_bico', ', '.join(fields), 'and', f"empresa_id = {int(filial)}", f"codigo_bico={int(bico)}")
+    
+    select = query.select('app_bico', ', '.join(fields), 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
 
     response = query.fecthall()
 
@@ -138,13 +139,12 @@ def bicos(filial, bico):
         porta_bico = i[6]
         mangueira = i[7]
         porta_eletrovalvula = i[8]
-        nro_bico = i[9]
-        ccs_id = i[10]
-        empresa_id = i[11]
-        local_abast_id = i[12]
-        tanque_id = i[13]
-        status = i[14]
-        codigo_bico = i[15]
+        ccs_id = i[9]
+        empresa_id = i[10]
+        local_abast_id = i[11]
+        tanque_id = i[12]
+        status = i[13]
+        codigo_bico = i[14]
 
         select_tanques = query.select('app_tanques', ', '.join(fields), 'and', f"id = {tanque_id}")
 
@@ -443,7 +443,9 @@ def placas(idMatriz):
         else:
             consumo = 0
 
-        print(i[14])
+        nropulsos = 0
+        if nropulsos is not None:
+            nropulsos = i[14]
         retorno = {
                 "id_placas": i[0],
                 "nroplaca": i[1],
@@ -459,7 +461,7 @@ def placas(idMatriz):
                 "id_checklist": i[8],
                 "exibemedia": 0,
                 "ctrlhrkm": i[11],
-                "codteclado": f"{i[2]}",
+                "codteclado": f"{i[2]}".upper(),
                 "ativo": i[12],
                 "pulsoskm": i[13],
                 "nropulsos": float(i[14]),
@@ -471,88 +473,109 @@ def placas(idMatriz):
     
     return jsonify(lista)
 
-@app.route('/v1/abastecimento/salvar', methods=['POST'])
+@app.route('/v1/abastecimento/salvar/<string:idFilial>/<string:nroBico>', methods=['POST'])
 @jwt_required()
-def abastecimento():
-    
+def abastecimento(idFilial, nroBico):
     body = request.get_json()
+    print(body)
+    select_bico = query.select('app_bico', 'id', 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
+
+    try:
+        response_bico = query.fecthall()
     
-    lista_fields = ["id", 
-                    "idfilial",
-                    "idcomboio",
-                    "idbico",
-                    "data",
-                    "qtde",
-                    "idplaca",
-                    "idfuncionario",
-                    "idoperador",
-                    "semtag",
-                    "odometro",
-                    "horimetro",
-                    "tag",
-                    "local",
-                    "tipotq",
-                    "tipolib",
-                    "telemetria"]
 
-    error = False
+        for i in response_bico:
+            id_bico = i[0]
+        print(id_bico)
+        lista_fields = ["id",
+                        "idfilial",
+                        "idcomboio",
+                        "idbico",
+                        "data",
+                        "qtde",
+                        "idplaca",
+                        "idfuncionario",
+                        "idoperador",
+                        "semtag",
+                        "odometro",
+                        "horimetro",
+                        "tag",
+                        "local",
+                        "tipotq",
+                        "tipolib",
+                        "telemetria",
+                        "abast_manual"]
 
-    for i, data in enumerate(lista_fields):
-        if lista_fields[i] not in body:
-            error = True
-            return {"message": f"está faltando o campo '{lista_fields[i]}', que é um campo obigatório."}
-
-    if error is not True:
-    
-        nomes_campos_dict = body.keys()
-        valores_campos_dict = body.values()
-
-        nomes_campos_db = []
-        valores_campos = []
-        for i in nomes_campos_dict:
+        error = False
+        
+        for i, data in enumerate(lista_fields):
+            if lista_fields[i] not in body:
+                error = True
+                return {"message": f"está faltando o campo '{lista_fields[i]}', que é um campo obigatório."}
+        print(error)
+        if error is not True:
             
-            if i == 'idfilial':
-                i = 'empresa_filial_id'
+            nomes_campos_dict = body.keys()
+            valores_campos_dict = body.values()
 
-            if i == 'idcomboio':
-                i = 'id_comboio'
+            nomes_campos_db = []
+            valores_campos = []
 
-            if i == 'idbico':
-                i = 'bico_id'
-
-            if i == 'data':
-                i = 'data_abastecimento'
-
-            if i == 'qtde':
-                i = 'qtde_abastecida'
-
-            if i == 'idplaca':
-                i = 'veiculo_id'
-
-            if i == 'idfuncionario':
-                i = 'abastecedor_id'
+            for i in nomes_campos_dict:
                 
-            if i == 'idoperador':
-                i = 'motorista_id'
+                if i == 'idfilial':
+                    i = 'empresa_filial_id'
 
-            if i == 'semtag':
-                i = 'sem_tag'
+                if i == 'idcomboio':
+                    i = 'id_comboio_id'
 
-            if i == 'odometro':
-                i = 'hodometro'
+                if i == 'idbico':
+                    i = 'bico_id'
 
-            if i == 'local':
-                i = 'local_abastecimento_id'
+                if i == 'data':
+                    i = 'data_abastecimento'
 
-            nomes_campos_db.append(i)
+                if i == 'qtde':
+                    i = 'qtde_abastecida'
 
-        for i in valores_campos_dict:
-            valores_campos.append(i)
-        
-        print(tuple(valores_campos))
-        insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
-        
-        return insert
+                if i == 'idplaca':
+                    i = 'veiculo_id'
+
+                if i == 'idfuncionario':
+                    i = 'abastecedor_id'
+                    
+                if i == 'idoperador':
+                    i = 'motorista_id'
+
+                if i == 'semtag':
+                    i = 'sem_tag'
+
+                if i == 'odometro':
+                    i = 'hodometro'
+
+                if i == 'local':
+                    i = 'local_abastecimento_id'
+
+                
+                nomes_campos_db.append(i)
+
+            for i in valores_campos_dict:
+                valores_campos.append(i)
+
+            print(nomes_campos_db)
+            print(len(valores_campos), len(nomes_campos_db))
+            for i, data in enumerate(nomes_campos_db):
+                
+                if data == 'bico_id':
+                    print(i)
+                    valores_campos[i] = id_bico
+
+            logging.warning(valores_campos)
+            insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
+            return {'success' : 'inserido com sucesso'}
+    except db.ProgrammingError:
+
+        return {'error' : 'abastecimento já realizado'}
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -563,4 +586,4 @@ def not_found(error):
     return "404 error", 404
 
 if __name__ == '__main__':
-    app.run(host='192.168.1.58', port='7676', debug=True)
+    app.run(host='45.15.24.171', port='5000', debug=True)

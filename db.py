@@ -60,10 +60,13 @@ class Querys(Connection):
             sql = f"INSERT INTO {table} ({fields}) VALUES {values};"
             print(sql)
             self.execute(sql)
-            self.commit()
+            print(self.commit())
 
             return {'Success': 'The values was insert into table abastecimento'}
         except Exception as e:
+            self.execute('rollback;')
+            self.commit()
+            print(e)
             return {'erro ao inserir!': e}
 
     def select(self, table, fields, operador=None, *args):
@@ -82,9 +85,12 @@ class Querys(Connection):
             self.commit()
             
         except Exception as e:
-           
+    
             self.execute('rollback;')
             self.commit()
 
             print(e)
-            
+    
+    def rollback(self):
+        self.execute('rollback;')
+        self.commit()
