@@ -44,8 +44,12 @@ class Connection(Configuracao):
         return self.cursor.fetchall()
 
     def execute(self, sql, params=None):
-        self.cursor.execute(sql, params or ())
-
+        try:
+            self.cursor.execute(sql, params or ())
+        except Exception as e:
+            self.conn = db.connect(**self.config['default'])
+            self.cur = self.conn.cursor()
+            
     def query(self, sql, params=None):
         self.cursor.execute(sql, params or ())
         return self.fecthall()
