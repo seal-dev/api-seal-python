@@ -423,54 +423,56 @@ def placas(idMatriz):
     fields = ['*']
 
     select = query.select('app_veiculos', ', '.join(fields), 'and', f"empresa_id = {int(idMatriz)} ORDER BY id;")
-
-    response = query.fecthall()
-    
-    lista = []
-    
-   
-    for i in response:
+    try:
+        response = query.fecthall()
         
-        select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]} ")
-
-        response_modelo = query.fecthall()
-
-        for j in response_modelo:
-            modelo = j[1]
+        lista = []
         
-        if i[11] > 0:
-            consumo = 1
-        else:
-            consumo = 0
-
-        nropulsos = 0
-        if nropulsos is not None:
-            nropulsos = i[14]
-        retorno = {
-                "id_placas": i[0],
-                "nroplaca": i[1],
-                "ultimoodometro": '0',
-                "tag": "string",
-                "veiculo": modelo,
-                "motorista": '{}'.format(0),
-                "id_entidade": 0,
-                "horimetro": '{}'.format(i[6]),
-                "emitecompnf": i[10],
-                "tpliberacao": i[9],
-                "ctrlconsumo": consumo,
-                "id_checklist": i[8],
-                "exibemedia": 0,
-                "ctrlhrkm": i[11],
-                "codteclado": f"{i[2]}".upper(),
-                "ativo": i[12],
-                "pulsoskm": i[13],
-                "nropulsos": float(i[14]),
-                "iptmct": '{}'.format(i[3]),
-                "kmbase": i[15],
-                "hrbase": i[16]
-        }
-        lista.append(retorno)
     
+        for i in response:
+            
+            select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]} ")
+
+            response_modelo = query.fecthall()
+
+            for j in response_modelo:
+                modelo = j[1]
+            
+            if i[11] > 0:
+                consumo = 1
+            else:
+                consumo = 0
+
+            nropulsos = 0
+            if nropulsos is not None:
+                nropulsos = i[14]
+            retorno = {
+                    "id_placas": i[0],
+                    "nroplaca": i[1],
+                    "ultimoodometro": '0',
+                    "tag": "string",
+                    "veiculo": modelo,
+                    "motorista": '{}'.format(0),
+                    "id_entidade": 0,
+                    "horimetro": '{}'.format(i[6]),
+                    "emitecompnf": i[10],
+                    "tpliberacao": i[9],
+                    "ctrlconsumo": consumo,
+                    "id_checklist": i[8],
+                    "exibemedia": 0,
+                    "ctrlhrkm": i[11],
+                    "codteclado": f"{i[2]}".upper(),
+                    "ativo": i[12],
+                    "pulsoskm": i[13],
+                    "nropulsos": float(i[14]),
+                    "iptmct": '{}'.format(i[3]),
+                    "kmbase": i[15],
+                    "hrbase": i[16]
+            }
+            lista.append(retorno)
+    except Exception as e:
+        print(e)
+        
     return jsonify(lista)
 
 @app.route('/v1/abastecimento/salvar/<string:idFilial>/<string:nroBico>', methods=['POST'])
@@ -483,10 +485,11 @@ def abastecimento(idFilial, nroBico):
     try:
         response_bico = query.fecthall()
     
-
         for i in response_bico:
             id_bico = i[0]
+            
         print(id_bico)
+        
         lista_fields = ["id",
                         "idfilial",
                         "idcomboio",
@@ -573,6 +576,7 @@ def abastecimento(idFilial, nroBico):
             logging.warning(valores_campos)
             insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
             return {'success' : 'inserido com sucesso'}
+
     except db.ProgrammingError:
 
         return {'error' : 'abastecimento já realizado'}
