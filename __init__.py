@@ -479,17 +479,17 @@ def placas(idMatriz):
 @jwt_required()
 def abastecimento(idFilial, nroBico):
     body = request.get_json()
-    print(body)
-    select_bico = query.select('app_bico', 'id', 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
-
+    
     try:
+        select_bico = query.select('app_bico', 'id', 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
+
+   
         response_bico = query.fecthall()
     
         for i in response_bico:
             id_bico = i[0]
             
         print(id_bico)
-        
         lista_fields = ["id",
                         "idfilial",
                         "idcomboio",
@@ -576,7 +576,7 @@ def abastecimento(idFilial, nroBico):
             logging.warning(valores_campos)
             insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
             return {'success' : 'inserido com sucesso'}
-
+            
     except db.ProgrammingError:
 
         return {'error' : 'abastecimento já realizado'}
