@@ -426,11 +426,13 @@ def placas(idMatriz):
     try:
         response = query.fecthall()
         
+
         lista = []
         
-    
         for i in response:
             
+            print(i)
+
             select_modelo = query.select('app_modelo', ', '.join(fields), 'and', f"id = {i[22]} ")
 
             response_modelo = query.fecthall()
@@ -490,6 +492,7 @@ def abastecimento(idFilial, nroBico):
             id_bico = i[0]
             
         print(id_bico)
+
         lista_fields = ["id",
                         "idfilial",
                         "idcomboio",

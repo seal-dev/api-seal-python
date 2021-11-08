@@ -9,7 +9,7 @@ class Configuracao():
                 'password': 'seal@2020#',
                 'host': 'localhost',
                 'port': '5432',
-                'database': 'seal', 
+                'database': 'seal2', 
             }
         }
 
