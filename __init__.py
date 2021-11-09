@@ -482,6 +482,8 @@ def placas(idMatriz):
 def abastecimento(idFilial, nroBico):
     body = request.get_json()
     
+    id_bico = None
+
     try:
         select_bico = query.select('app_bico', 'id', 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
 
@@ -577,8 +579,13 @@ def abastecimento(idFilial, nroBico):
                     valores_campos[i] = id_bico
 
             logging.warning(valores_campos)
-            insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
-            return {'success' : 'inserido com sucesso'}
+
+            if id_bico is not None:
+                insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
+                return {'success' : 'inserido com sucesso'}
+            else:
+                return {'error': 'ID do bico vazio. Impossivel inserir abastecimento.'}
+            
             
     except db.ProgrammingError:
 
