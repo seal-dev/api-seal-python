@@ -21,6 +21,25 @@ def home():
 
 @app.route('/v1/auth/refreshtoken/<string:device>', methods=['GET'])
 def login(device):
+    fields = ['status']
+    select = query.select('app_pagamentos', ', '.join(fields), 'and', f'empresa_id={int(device)}')
+
+    response = query.fecthall()
+
+    for i in response:
+        try:
+            status_pagamento = i[0]
+        except:
+            status_pagamento = None
+    
+    if status_pagamento is not None:
+        if status_pagamento is True:
+            print('pagemento efetuado com sucesso.')
+        elif status_pagamento is False:
+            print('pagamento não efetuado.')
+    else:
+        print('nem um pagamento encontrado para está empresa.')
+        
     delta = datetime.timedelta(minutes=30)
     token = create_access_token(identity=device, expires_delta=delta)
     return json.dumps({'token': token})
