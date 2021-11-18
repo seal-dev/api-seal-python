@@ -26,10 +26,11 @@ def login(device):
 
     response = query.fecthall()
 
+    status_pagamento = None
     for i in response:
         try:
             status_pagamento = i[0]
-        except:
+        except Exception as e:
             status_pagamento = None
     
     if status_pagamento is not None:
@@ -39,7 +40,7 @@ def login(device):
             print('pagamento não efetuado.')
     else:
         print('nem um pagamento encontrado para está empresa.')
-        
+
     delta = datetime.timedelta(minutes=30)
     token = create_access_token(identity=device, expires_delta=delta)
     return json.dumps({'token': token})
