@@ -9,7 +9,7 @@ class Configuracao():
                 'password': 'seal@2020#',
                 'host': 'localhost',
                 'port': '5432',
-                'database': 'seal2', 
+                'database': 'seal', 
             }
         }
 
@@ -80,7 +80,7 @@ class Querys(Connection):
             else:
                 condition = f' {operador} '.join(condicionais)
                 sql = f"select {fields} from {table} where {condition};"
-            
+
             self.execute(sql)
             self.commit()
             

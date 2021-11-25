@@ -3,9 +3,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from db import Querys
 import json
 import jwt
-import datetime
 import psycopg2 as db
 import logging
+import datetime
 
 app = Flask(__name__)
 
@@ -21,29 +21,30 @@ def home():
 
 @app.route('/v1/auth/refreshtoken/<string:device>', methods=['GET'])
 def login(device):
-    fields = ['status']
-    select = query.select('app_pagamentos', ', '.join(fields), 'and', f'empresa_id={int(device)}')
+    hoje = datetime.date.today()
+    fields = ['distinct *']
+    select = query.select('app_pagamentos', ', '.join(fields), 'and', f'empresa_id={int(device)} order by id desc fetch first 1 rows only')
 
     response = query.fecthall()
 
-    status_pagamento = None
+    data = None
+
     for i in response:
         try:
-            status_pagamento = i[0]
+            data = i[1]
         except Exception as e:
-            status_pagamento = None
+            data = None
     
-    if status_pagamento is not None:
-        if status_pagamento is True:
-            print('pagemento efetuado com sucesso.')
-        elif status_pagamento is False:
-            print('pagamento não efetuado.')
+    if data is not None:
+        past = datetime.date.fromordinal(hoje.toordinal()-35)
+        if past > data :
+            return json.dumps({'error': 'Pagamento nao efetuado.'})
+        else:
+            delta = datetime.timedelta(minutes=30)
+            token = create_access_token(identity=device, expires_delta=delta)
+            return json.dumps({'token': token})
     else:
-        print('nem um pagamento encontrado para está empresa.')
-
-    delta = datetime.timedelta(minutes=30)
-    token = create_access_token(identity=device, expires_delta=delta)
-    return json.dumps({'token': token})
+        return json.dumps({'error': 'Nenhum pagamento efetuado.'})
  
 @app.route('/v1/localabast/get/<string:matriz>', methods=['GET'])
 @jwt_required()
@@ -620,4 +621,4 @@ def not_found(error):
     return "404 error", 404
 
 if __name__ == '__main__':
-    app.run(host='192.168.1.58', port='5000', debug=True)
+    app.run(host='192.168.1.20', port='7575', debug=True)
