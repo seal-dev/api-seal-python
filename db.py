@@ -58,15 +58,14 @@ class Querys(Connection):
         try:
             
             sql = f"INSERT INTO {table} ({fields}) VALUES {values};"
-            print(sql)
             self.execute(sql)
-            print(self.commit())
+            self.commit()
 
             return {'Success': 'The values was insert into table abastecimento'}
         except Exception as e:
             self.execute('rollback;')
             self.commit()
-            print(e)
+            
             return {'erro ao inserir!': e}
 
     def select(self, table, fields, operador=None, *args):

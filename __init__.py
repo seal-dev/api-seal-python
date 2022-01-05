@@ -38,12 +38,15 @@ def login(device):
     if data is not None:
         past = datetime.date.fromordinal(hoje.toordinal()-35)
         if past > data :
+          
             return json.dumps({'error': 'Pagamento nao efetuado.'})
         else:
             delta = datetime.timedelta(minutes=30)
             token = create_access_token(identity=device, expires_delta=delta)
+          
             return json.dumps({'token': token})
     else:
+     
         return json.dumps({'error': 'Nenhum pagamento efetuado.'})
  
 @app.route('/v1/localabast/get/<string:matriz>', methods=['GET'])
@@ -435,7 +438,6 @@ def get_abastecimentos(idFilial):
     except Exception as e:
 
         return str(e)
-   
 
 @app.route('/v1/placas/get/<string:idMatriz>', methods=['GET'])
 @jwt_required()
@@ -498,6 +500,25 @@ def placas(idMatriz):
         
     return jsonify(lista)
 
+@app.route('/v1/movimentacao/salvar/<string:idMatriz>', methods=['POST'])
+@jwt_required()
+def movimentacao(idMatriz):
+    body = request.get_json()
+
+    try:
+        query =  Querys()
+
+        campos = body.keys()
+        valores = body.values()
+
+        query.insert('app_movimentacaoprodutos', ', '.join(campos), tuple(valores))
+
+        return {'success': 'Valores inseridos com sucesso!'}
+    except:
+        
+        return {'Error': "Valores não inseridos!"}
+    
+
 @app.route('/v1/abastecimento/salvar/<string:idFilial>/<string:nroBico>', methods=['POST'])
 @jwt_required()
 def abastecimento(idFilial, nroBico):
@@ -507,7 +528,6 @@ def abastecimento(idFilial, nroBico):
 
     try:
         select_bico = query.select('app_bico', 'id', 'and', f"empresa_id={int(idFilial)}", f"codigo_bico={int(nroBico)}")
-
    
         response_bico = query.fecthall()
     
@@ -591,18 +611,17 @@ def abastecimento(idFilial, nroBico):
             for i in valores_campos_dict:
                 valores_campos.append(i)
 
-            print(nomes_campos_db)
-            print(len(valores_campos), len(nomes_campos_db))
+            print('valores_campos', valores_campos, '\n', nomes_campos_db)
+
             for i, data in enumerate(nomes_campos_db):
                 
                 if data == 'bico_id':
                     print(i)
                     valores_campos[i] = id_bico
 
-            logging.warning(valores_campos)
-
             if id_bico is not None:
                 insert = query.insert('app_abastecimento', ', '.join(nomes_campos_db), tuple(valores_campos))
+                
                 return {'success' : 'inserido com sucesso'}
             else:
                 return {'error': 'ID do bico vazio. Impossivel inserir abastecimento.'}
@@ -621,4 +640,4 @@ def not_found(error):
     return "404 error", 404
 
 if __name__ == '__main__':
-    app.run(host='192.168.1.20', port='7575', debug=True)
+    app.run(host='192.168.1.60', port='7575', debug=True)
