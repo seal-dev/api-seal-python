@@ -58,8 +58,10 @@ class Querys(Connection):
         try:
             
             sql = f"INSERT INTO {table} ({fields}) VALUES {values};"
+            print(sql)
             self.execute(sql)
-            self.commit()
+            print(self.commit())
+            
 
             return {'Success': 'The values was insert into table abastecimento'}
         except Exception as e:
