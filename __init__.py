@@ -621,4 +621,4 @@ def not_found(error):
     return "404 error", 404
 
 if __name__ == '__main__':
-    app.run(host='192.168.1.20', port='7575', debug=True)
+    app.run(host='172.31.11.186', port='7575', debug=True)
