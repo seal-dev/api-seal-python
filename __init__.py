@@ -21,6 +21,10 @@ def home():
 
 @app.route('/v1/auth/refreshtoken/<string:device>', methods=['GET'])
 def login(device):
+    delta = datetime.timedelta(minutes=30)
+    token = create_access_token(identity=device, expires_delta=delta)
+          
+    return json.dumps({'token': token}) 
     hoje = datetime.date.today()
     fields = ['distinct *']
     select = query.select('app_pagamentos', ', '.join(fields), 'and', f'empresa_id={int(device)} order by id desc fetch first 1 rows only')
@@ -639,6 +643,6 @@ def internal_error(error):
 def not_found(error):
     return "404 error", 404
 
-if __name__ == '__main__':
-    app.run(host='172.31.11.186', port='7575', debug=True)
+#if __name__ == '__main__':
+app.run(host='0.0.0.0', port='5000', debug=True)
 
