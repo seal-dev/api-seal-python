@@ -540,7 +540,7 @@ def abastecimento(idFilial, nroBico):
             
         print(id_bico)
 
-        lista_fields = ["id",
+        lista_fields = [
                         "idfilial",
                         "idcomboio",
                         "idbico",

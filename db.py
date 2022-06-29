@@ -55,10 +55,10 @@ class Querys(Connection):
         Connection.__init__(self, *args, **kwargs)
 
     def insert(self, table, fields, values):
-        try:
-            
+        try:            
             sql = f"INSERT INTO {table} ({fields}) VALUES {values};"
-            print(sql)
+            if table == 'app_abastecimento':
+                print(sql)
             self.execute(sql)
             print(self.commit())
 
