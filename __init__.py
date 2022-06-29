@@ -136,7 +136,7 @@ def tanques(idMatriz):
             "id_veiculos": i[7],
             "id_produtos1": i[4],
             "id_produtos2": i[5],
-            "cod_xpid": '0',
+            "cod_xpid": i[1],
             "tipo": 0,
             "ativo": i[3]
         }
